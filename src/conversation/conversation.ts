@@ -58,7 +58,10 @@ export class Conversation {
     const { store, executor, events } = this.deps;
     const [kind, ref, extra] = data.split(":");
 
-    if (kind === "msg") return this.message(chatId, ref ?? "", user);
+    if (kind === "msg") {
+      const label = store.choiceLabels.get(`${chatId}:${ref}`);
+      return this.message(chatId, label ? `Обрано: ${label} (${ref})` : (ref ?? ""), user);
+    }
 
     if (kind === "confirm" || kind === "cancel") {
       const pending = store.plans.get(ref ?? "");
@@ -119,7 +122,10 @@ export class Conversation {
 
     const replies: Reply[] = [];
     if (turn.text) replies.push({ text: turn.text });
-    if (turn.out.question) replies.push(turn.out.question);
+    if (turn.out.question) {
+      for (const b of turn.out.question.buttons.flat()) this.deps.store.choiceLabels.set(`${ticket.chatId}:${b.data.slice(4)}`, b.label);
+      replies.push(turn.out.question);
+    }
     if (turn.out.plan) {
       replies.push({
         text: turn.out.plan.text,

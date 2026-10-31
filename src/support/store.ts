@@ -8,6 +8,7 @@ export class SupportStore {
   audit: AuditEntry[] = [];
   history = new Map<string, ModelMessage[]>();
   blocked = 0;
+  choiceLabels = new Map<string, string>();
   private counters = new Map<string, number>();
 
   nextId(prefix: string) {
