@@ -1,0 +1,37 @@
+{
+  "name": "ai-infra-support-agent",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "chat": "tsx scripts/chat.ts",
+    "test": "tsx --test test/*.test.ts",
+    "eval": "tsx scripts/eval.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m4xx1k/ai-infra-support-agent.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/m4xx1k/ai-infra-support-agent/issues"
+  },
+  "homepage": "https://github.com/m4xx1k/ai-infra-support-agent#readme",
+  "dependencies": {
+    "@ai-sdk/google": "^4.0.109",
+    "@hono/node-server": "^2.1.5",
+    "ai": "^7.0.159",
+    "hono": "^4.13.14",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}

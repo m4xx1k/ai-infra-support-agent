@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --surface-2: #f9fafb; --border: #e6e8ec;
+    --text: #0f172a; --muted: #64748b; --faint: #94a3b8;
+    --accent: #4f46e5; --accent-soft: #eef2ff;
+    --ok: #15803d; --ok-soft: #dcfce7; --warn: #b45309; --warn-soft: #fef3c7;
+    --bad: #b91c1c; --bad-soft: #fee2e2; --info: #1d4ed8; --info-soft: #dbeafe;
+    --neutral-soft: #f1f5f9;
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+    --r: 10px; --shadow: 0 1px 2px rgba(15,23,42,.05), 0 1px 3px rgba(15,23,42,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0f17; --surface: #121826; --surface-2: #161d2d; --border: #232c3f;
+      --text: #e5e9f0; --muted: #94a3b8; --faint: #64748b;
+      --accent: #818cf8; --accent-soft: #1e1b4b;
+      --ok: #4ade80; --ok-soft: #0f2e1c; --warn: #fbbf24; --warn-soft: #33260a;
+      --bad: #f87171; --bad-soft: #3a1414; --info: #60a5fa; --info-soft: #102544;
+      --neutral-soft: #1c2436; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Inter, system-ui, sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: var(--s6) var(--s4); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s5); flex-wrap: wrap; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+  h1 span { color: var(--muted); font-weight: 500; }
+  .live { display: inline-flex; align-items: center; gap: var(--s2); color: var(--muted); font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s3); margin-bottom: var(--s6); }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: var(--s4); box-shadow: var(--shadow); }
+  .stat .label { color: var(--muted); font-size: 12px; font-weight: 500; }
+  .stat .value { font-size: 26px; font-weight: 700; margin-top: var(--s1); letter-spacing: -.02em; }
+  .stat.hero .value { color: var(--accent); }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); margin-bottom: var(--s5); overflow: hidden; }
+  section h2 { font-size: 15px; font-weight: 600; margin: 0; padding: var(--s4) var(--s4); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  section h2 small { color: var(--muted); font-weight: 400; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); padding: var(--s2) var(--s4); background: var(--surface-2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover td { background: var(--surface-2); }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .b-ok { background: var(--ok-soft); color: var(--ok); }
+  .b-warn { background: var(--warn-soft); color: var(--warn); }
+  .b-bad { background: var(--bad-soft); color: var(--bad); }
+  .b-info { background: var(--info-soft); color: var(--info); }
+  .b-neutral { background: var(--neutral-soft); color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--s1); align-items: center; }
+  .chip { font-family: "JetBrains Mono", monospace; font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); }
+  .arrow { color: var(--faint); font-size: 11px; }
+  .detail td { background: var(--surface-2); }
+  .steps { display: grid; gap: var(--s2); }
+  .step { display: grid; grid-template-columns: 180px 1fr; gap: var(--s3); font-size: 12px; }
+  .step pre { margin: 0; white-space: pre-wrap; word-break: break-word; color: var(--muted); }
+  .plan { border-left: 3px solid var(--accent); padding: var(--s2) var(--s3); margin-top: var(--s3); background: var(--surface); border-radius: 6px; }
+  button { font: inherit; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--bad); cursor: pointer; }
+  button:hover { background: var(--bad-soft); border-color: transparent; }
+  .empty { padding: var(--s6); text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI Hosting Support <span>· консоль оператора</span></h1>
+    <div class="live"><span class="dot"></span><span id="updated">оновлення…</span></div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <section>
+    <h2>Тікети <small>клік — що перевірив AI</small></h2>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Клієнт</th><th>Запит</th><th>Статус</th><th>Що робив AI</th><th>Створено</th></tr></thead>
+      <tbody id="tickets"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Аудит дій <small>кожна зміна має знімок і відкат</small></h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Час</th><th>Клієнт</th><th>Дія</th><th>План, який погодив клієнт</th><th>Результат</th><th></th></tr></thead>
+      <tbody id="audit"></tbody>
+    </table></div>
+  </section>
+</div>
+<script>
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const time = (iso) => new Date(iso).toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const STATUS = {
+  open: ["розслідує", "b-info"], waiting_user: ["чекає клієнта", "b-warn"], in_progress: ["виконується", "b-info"],
+  resolved: ["вирішено ботом", "b-ok"], failed: ["помилка", "b-bad"], escalated: ["передано людині", "b-bad"], cancelled: ["скасовано", "b-neutral"],
+};
+const RESULT = { executed: ["виконано", "b-ok"], failed: ["помилка", "b-bad"], blocked: ["заблоковано", "b-warn"], rolled_back: ["відкат", "b-info"] };
+const badge = ([text, cls]) => `<span class="badge ${cls}">${text}</span>`;
+const STATS = [
+  ["resolvedByBotPct", "Вирішено ботом", (v) => `${v}%`, true],
+  ["total", "Звернень", String],
+  ["avgResolveSec", "Сер. час вирішення", (v) => (v >= 60 ? `${Math.round(v / 60)} хв` : `${v} с`)],
+  ["escalated", "Передано людині", String],
+  ["blocked", "Заблоковано дій", String],
+  ["csatAvg", "CSAT", (v) => (v ? `${v} / 5` : "—")],
+];
+const open = new Set();
+let tickets = [];
+
+function renderTickets() {
+  const el = document.getElementById("tickets");
+  if (!tickets.length) { el.innerHTML = `<tr><td colspan="6" class="empty">Поки немає звернень — напишіть боту</td></tr>`; return; }
+  el.innerHTML = tickets.map((t) => {
+    const tools = t.steps.map((s) => `<span class="chip">${esc(s.tool)}</span>`).join('<span class="arrow">→</span>');
+    const row = `<tr class="clickable" onclick="toggle('${t.id}')">
+      <td class="mono">${t.id}</td><td>${esc(t.customerId)}</td>
+      <td><div>${esc(t.summary || "—")}</div><div class="muted mono">${esc(t.intent)}</div>${t.escalationReason ? `<div class="muted">${esc(t.escalationReason)}</div>` : ""}</td>
+      <td>${badge(STATUS[t.status] ?? [t.status, "b-neutral"])}${t.csat ? ` <span class="muted">★ ${t.csat}</span>` : ""}</td>
+      <td><div class="chips">${tools || '<span class="muted">—</span>'}</div></td>
+      <td class="muted">${time(t.createdAt)}</td></tr>`;
+    if (!open.has(t.id)) return row;
+    const steps = t.steps.map((s) => `<div class="step"><span class="chip">${esc(s.tool)}</span><pre>${esc(JSON.stringify(s.args))} → ${esc(JSON.stringify(s.result))}</pre></div>`).join("");
+    const plans = (t.plans ?? []).map((p) => `<div class="plan"><span class="mono">${p.id}</span> ${badge([p.status, p.status === "executed" ? "b-ok" : p.status === "proposed" ? "b-warn" : "b-neutral"])}<div>${esc(p.text)}</div></div>`).join("");
+    return row + `<tr class="detail"><td colspan="6"><div class="steps">${steps || '<span class="muted">Кроків ще немає</span>'}</div>${plans}</td></tr>`;
+  }).join("");
+}
+
+async function toggle(id) {
+  if (open.has(id)) open.delete(id); else open.add(id);
+  await load();
+}
+
+async function rollback(id) {
+  if (!confirm("Відкотити цю зміну? Сайт повернеться до стану перед дією, клієнт отримає повідомлення.")) return;
+  await fetch("/api/rollback/" + id, { method: "POST" });
+  load();
+}
+
+async function load() {
+  const [stats, list, audit] = await Promise.all(["stats", "tickets", "audit"].map((p) => fetch("/api/" + p).then((r) => r.json())));
+  tickets = await Promise.all(list.map((t) => (open.has(t.id) ? fetch("/api/tickets/" + t.id).then((r) => r.json()) : t)));
+  document.getElementById("stats").innerHTML = STATS.map(([k, label, fmt, hero]) =>
+    `<div class="stat${hero ? " hero" : ""}"><div class="label">${label}</div><div class="value">${fmt(stats[k])}</div></div>`).join("");
+  renderTickets();
+  document.getElementById("audit").innerHTML = audit.length ? audit.map((a) => `<tr>
+    <td class="muted">${time(a.at)}</td><td>${esc(a.customerId)}</td>
+    <td><span class="chip">${esc(a.action)}</span><div class="muted mono">${esc(JSON.stringify(a.params))}</div></td>
+    <td>${esc(a.aiUnderstood) || `<span class="muted">${esc(a.detail)}</span>`}</td>
+    <td>${badge(RESULT[a.result] ?? [a.result, "b-neutral"])}${a.rolledBack ? ` ${badge(["відкочено", "b-info"])}` : ""}</td>
+    <td>${a.snapshotId && !a.rolledBack ? `<button onclick="rollback('${a.id}')">↩ Відкотити</button>` : ""}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">Дій ще не було</td></tr>`;
+  document.getElementById("updated").textContent = "оновлено " + time(new Date().toISOString());
+}
+
+load(); setInterval(load, 3000);
+</script>
+</body>
+</html>
