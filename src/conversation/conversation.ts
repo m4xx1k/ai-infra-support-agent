@@ -1,9 +1,9 @@
 import { runAgentTurn, type AgentDeps } from "../agent/agent.ts";
 import type { HostingProvider } from "../hosting/provider.ts";
-import { plain, type Notifier } from "../notify.ts";
+import { plain } from "../events.ts";
 import type { Reply, Ticket, TgUser } from "../types.ts";
 
-export type ConversationDeps = AgentDeps & { hosting: HostingProvider; notify: Notifier };
+export type ConversationDeps = AgentDeps & { hosting: HostingProvider };
 
 const ACTIVE = new Set(["open", "waiting_user", "in_progress"]);
 const MAX_LINK_ATTEMPTS = 5;
@@ -55,7 +55,7 @@ export class Conversation {
   }
 
   private async button(chatId: string, data: string, user?: TgUser): Promise<Reply[]> {
-    const { store, executor, notify } = this.deps;
+    const { store, executor, events } = this.deps;
     const [kind, ref, extra] = data.split(":");
 
     if (kind === "msg") return this.message(chatId, ref ?? "", user);
@@ -63,7 +63,7 @@ export class Conversation {
     if (kind === "confirm" || kind === "cancel") {
       const pending = store.plans.get(ref ?? "");
       if (kind === "confirm" && pending?.status === "proposed" && pending.customerId === store.sessions.get(chatId)?.customerId) {
-        await notify(chatId, [{ text: "Роблю знімок поточного стану і відновлюю… Це займе до хвилини." }]);
+        events.emit(chatId, { type: "status", text: "📸 Роблю знімок поточного стану і відновлюю…" });
       }
       const result = kind === "confirm" ? executor.confirm(chatId, ref ?? "") : executor.cancel(chatId, ref ?? "");
       if (result.repeated) return [{ text: result.message }];

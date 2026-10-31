@@ -14,7 +14,7 @@ const botAuth: MiddlewareHandler = async (c, next) => {
 
 export function apiRoutes(app: App) {
   const api = new Hono();
-  const { conversation, store, executor, notify } = app;
+  const { conversation, store, executor, events } = app;
 
   api.post("/chat", botAuth, async (c) => {
     const body = chatBody.safeParse(await c.req.json().catch(() => null));
@@ -26,6 +26,12 @@ export function apiRoutes(app: App) {
     const body = buttonBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: body.error.issues }, 400);
     return c.json({ replies: await conversation.handleButton(body.data.chatId, body.data.data, body.data.user) });
+  });
+
+  api.get("/events", botAuth, async (c) => {
+    const after = Number(c.req.query("after") ?? 0) || 0;
+    const wait = c.req.query("wait") === "0" ? 0 : 25_000;
+    return c.json({ events: await events.poll(after, c.req.query("chatId") || undefined, wait) });
   });
 
   api.get("/tickets", (c) => c.json([...store.tickets.values()].reverse()));
@@ -57,8 +63,8 @@ export function apiRoutes(app: App) {
     const entry = store.audit.find((a) => a.id === c.req.param("auditId"));
     const result = executor.rollback(c.req.param("auditId"));
     if (!result.ok || !entry) return c.json(result, 400);
-    const push = await notify(entry.chatId, [{ text: result.message }]);
-    return c.json({ ...result, customerNotified: push.ok, pushError: push.error });
+    events.emit(entry.chatId, { type: "replies", replies: [{ text: result.message }] });
+    return c.json(result);
   });
 
   return api;

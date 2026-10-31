@@ -133,10 +133,15 @@ POST /api/chat    { chatId: string, text: string, user?: TgUser }  → { replies
 POST /api/button  { chatId: string, data: string, user?: TgUser }  → { replies: Reply[] }
   заголовок: Authorization: Bearer <CORE_API_KEY>   (без нього → 401)
 
-ядро → бот (асинхронно: проміжні статуси дій, відкат оператором):
-POST {BOT_URL}/push { chatId: string, replies: Reply[] }
-  заголовок: X-Push-Secret: <PUSH_SECRET>   (бот перевіряє, інакше 401)
-  відповідь: { ok: true } | { ok: false, error: "blocked" | ... }
+ядро → бот: бот сам забирає події (long polling), вхідного порту в бота немає:
+GET /api/events?after=<lastId>[&chatId=<id>][&wait=0]   Authorization: Bearer <CORE_API_KEY>
+  → { events: Event[] }      // якщо нових подій немає, ядро тримає запит до 25 с
+  Event =
+    | { id: number, chatId: string, type: "replies", replies: Reply[] }   // відкат з дашборду, відповідь оператора
+    | { id: number, chatId: string, type: "status",  text: string }       // «🔎 Перевіряю сайт…» під час роботи агента
+  after=N означає «бот отримав усе до N включно»: ядро видаляє ці події й віддає решту;
+  після рестарту бот починає без after і отримує все непідтверджене;
+  chatId — необов'язковий фільтр без видалення (для терміналу/веб-чату), ядро тримає максимум 500 подій
 
 TgUser = { firstName?: string, username?: string, languageCode?: string }   // з Telegram update
 Reply  = { text: string, buttons?: Button[][] }   // рядки кнопок; text — plain text, без Markdown
@@ -151,7 +156,8 @@ Button = { label: string, data: string }          // data ≤ 64 байти (л�
 Правила для бота:
 - кожен текст (зокрема `/start`, `/link 1234`) → `/api/chat`, кожне натискання кнопки → `/api/button`, обидва з `Authorization` і `user`;
 - `replies` відмальовувати як plain text (без `parse_mode`) з inline-клавіатурою; на всяк випадок прибирати `**`; відповідати на callback query;
-- `/push` приймати лише з правильним `X-Push-Secret`; порт бота не публікувати назовні, лише в docker-мережі; якщо Telegram повернув 403 → `{ ok: false, error: "blocked" }`;
+- в тому ж процесі, що й Telegram polling: нескінченний цикл `GET /api/events?after=lastId`, при помилках пауза 1 → 2 → 5 с; після рестарту можна почати з `after=0` (дублікати відсіяти за id);
+- `replies` — через чергу цього chatId, щоб не змішатися з поточною відповіддю; `status` — оновити заглушку «друкує…», якщо вона зараз є, інакше ігнорувати;
 - rate limit на `/link` (другий рубіж; у ядрі код одноразовий і максимум 5 спроб на чат);
 - токен Telegram живе лише в репо бота.
 
@@ -270,7 +276,7 @@ ticket.history.push(...result.response.messages);
 ## 17. Запуск
 
 ```bash
-cp .env.example .env        # GOOGLE_GENERATIVE_AI_API_KEY, CORE_API_KEY, PUSH_SECRET, BOT_URL (необов'язково)
+cp .env.example .env        # GOOGLE_GENERATIVE_AI_API_KEY, CORE_API_KEY
 docker compose up           # ядро + дашборд на :3000
 npm run chat                # чат у терміналі без бота
 npm test && npm run eval

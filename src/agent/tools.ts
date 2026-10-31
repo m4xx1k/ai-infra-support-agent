@@ -1,7 +1,7 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
-import { ActionExecutor, PolicyError } from "../engine/executor.ts";
-import type { SupportStore } from "../support/store.ts";
+import { PolicyError } from "../engine/executor.ts";
+import type { AgentDeps } from "./agent.ts";
 import type { Button, Ctx, Plan } from "../types.ts";
 
 export type TurnOutput = { question?: { text: string; buttons: Button[][] }; plan?: Plan };
@@ -15,7 +15,13 @@ const safely = (fn: () => unknown) => {
   }
 };
 
-export function buildTools(ctx: Ctx, executor: ActionExecutor, store: SupportStore, out: TurnOutput): ToolSet {
+const STATUS: Record<string, string> = {
+  list_sites: "🔎 Дивлюсь ваші сайти…",
+  check_site: "🔎 Перевіряю, чи відповідає сайт…",
+  list_backups: "🗂 Шукаю бекапи…",
+};
+
+export function buildTools(ctx: Ctx, { executor, store, events }: AgentDeps, out: TurnOutput): ToolSet {
   const tools: ToolSet = {};
 
   for (const action of executor.actions) {
@@ -23,7 +29,10 @@ export function buildTools(ctx: Ctx, executor: ActionExecutor, store: SupportSto
       tools[action.name] = tool({
         description: action.description,
         inputSchema: action.params,
-        execute: async (input) => safely(() => executor.read(ctx, action.name, input)),
+        execute: async (input) => {
+          if (STATUS[action.name]) events.emit(ctx.chatId, { type: "status", text: STATUS[action.name]! });
+          return safely(() => executor.read(ctx, action.name, input));
+        },
       });
     } else {
       tools[`propose_${action.name}`] = tool({
