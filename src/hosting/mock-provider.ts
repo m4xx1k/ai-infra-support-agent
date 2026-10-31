@@ -10,13 +10,8 @@ export class MockHostingProvider implements HostingProvider {
   private backups: Backup[] = structuredClone(seed.backups);
   private snapshots = new Map<string, Snapshot>();
 
-  private usedCodes = new Set<string>();
-
-  consumeLinkCode(code: string) {
-    const customer = this.customers.find((c) => c.linkCode === code);
-    if (!customer || this.usedCodes.has(code)) return undefined;
-    this.usedCodes.add(code);
-    return customer;
+  findCustomerByLinkCode(code: string) {
+    return this.customers.find((c) => c.linkCode === code);
   }
 
   listSites(customerId: string) {

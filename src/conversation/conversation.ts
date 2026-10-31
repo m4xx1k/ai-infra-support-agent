@@ -38,8 +38,8 @@ export class Conversation {
         return [{ text: "Забагато спроб. Зверніться до підтримки через панель керування." }];
       }
       session.linkAttempts++;
-      const customer = hosting.consumeLinkCode(trimmed.split(/\s+/)[1] ?? "");
-      if (!customer) return [{ text: "Код не підійшов або вже використаний. Візьміть новий одноразовий код у панелі керування." }];
+      const customer = hosting.findCustomerByLinkCode(trimmed.split(/\s+/)[1] ?? "");
+      if (!customer) return [{ text: "Код не підійшов. Візьміть код у панелі керування." }];
       session.customerId = customer.id;
       session.ticketId = undefined;
       session.linkAttempts = 0;
