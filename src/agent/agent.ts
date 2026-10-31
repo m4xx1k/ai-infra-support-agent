@@ -27,6 +27,6 @@ export async function runAgentTurn(ctx: Ctx, deps: AgentDeps) {
     stopWhen: [isStepCount(8), hasToolCall("ask_user", "escalate", ...proposeTools)],
   });
 
-  history.push(...result.response.messages);
+  history.push(...result.responseMessages);
   return { text: result.text.trim(), out };
 }
